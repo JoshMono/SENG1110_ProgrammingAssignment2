@@ -137,6 +137,28 @@ public class Member {
             + String.format("%.2f", totalCost) + ","
             + visitCount;
     }
+
+
+    // Applies a promotional discount before GST is calculated.
+    public void applyDiscount(double discount) {
+
+        subtotal -= discount;
+
+        if (subtotal < 0) {
+            subtotal = 0;
+        }
+
+        tax = subtotal * GST_RATE;
+        totalCost = subtotal + tax;
+    }
+
+
+    public void loadSavedData(double subtotal, double tax, double totalCost, int visitCount) {
+        this.subtotal = subtotal;
+        this.tax = tax;
+        this.totalCost = totalCost;
+        this.visitCount = visitCount;
+    }
     
 
     

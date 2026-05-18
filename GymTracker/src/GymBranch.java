@@ -1,3 +1,6 @@
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.Scanner;
 
 public class GymBranch {
 
@@ -112,6 +115,71 @@ public class GymBranch {
     }
 
 
+    public String registerPromotionalMember(int memberId, String name, String planName, double planPrice, int durationMonths, boolean hasTrainer, int trainerSessions, boolean hasLocker) {
+
+        if (isFull()) {
+            return "Error: Branch is full. No more members can be registered.";
+        }
+
+        boolean idChanged = false;
+
+        if (isDuplicateMemberId(memberId)) {
+            memberId = generateUniqueMemberId();
+            idChanged = true;
+        }
+
+        Member newMember = new Member(memberId, name, planName, planPrice,
+                                    durationMonths, hasTrainer,
+                                    trainerSessions, hasLocker);
+
+        int promo = (int)(Math.random() * 3);
+        String promoName = "";
+        double discount = 0.0;
+
+        if (promo == 0) {
+            promoName = "First Month Free";
+
+            if (durationMonths >= 2) {
+                discount = planPrice;
+            }
+        }
+        else if (promo == 1) {
+            promoName = "20% Off Total";
+            discount = newMember.getSubtotal() * 0.20;
+        }
+        else {
+            promoName = "Free Locker for 3 Months";
+
+            if (hasLocker) {
+                if (durationMonths < 3) {
+                    discount = 10.00 * durationMonths;
+                }
+                else {
+                    discount = 10.00 * 3;
+                }
+            }
+        }
+
+        newMember.applyDiscount(discount);
+
+        members[memberCount] = newMember;
+        memberCount++;
+
+        addCounters(newMember);
+
+        String message = "Promotional member registered successfully.\n";
+        message += "Promotion Applied: " + promoName + "\n";
+        message += "Discount: $" + String.format("%.2f", discount) + "\n";
+        message += "Final Total: $" + String.format("%.2f", newMember.getTotalCost());
+
+        if (idChanged) {
+            message += "\nEntered ID already existed. New member ID assigned: " + memberId;
+        }
+
+        return message;
+    }
+
+
     // Records a gym visit for the most recently registered member.
     public String recordVisitForLastMember() {
 
@@ -211,9 +279,9 @@ public class GymBranch {
             + "Name: " + lastMember.getName() + "\n"
             + "Plan: " + lastMember.getPlanName() + "\n"
             + "Duration: " + lastMember.getDurationMonths() + " months\n"
-            + "Trainer: " + lastMember.hasTrainer() + "\n"
+            + "Trainer: " + (lastMember.hasTrainer() ? "Yes" : "No") + "\n"
             + "Trainer Sessions: " + lastMember.getTrainerSessions() + "\n"
-            + "Locker: " + lastMember.hasLocker() + "\n"
+            + "Locker: " + (lastMember.hasLocker() ? "Yes" : "No") + "\n"
             + "Monthly Cost: $" + String.format("%.2f", lastMember.getMonthlyCost()) + "\n"
             + "Subtotal: $" + String.format("%.2f", lastMember.getSubtotal()) + "\n"
             + "GST: $" + String.format("%.2f", lastMember.getTax()) + "\n"
@@ -275,6 +343,14 @@ public class GymBranch {
         // Display revenue statistics
         summary += "Total Revenue: $"
                 + String.format("%.2f", totalRevenue) + "\n";
+        double averageValue = 0.0;
+
+        if (memberCount > 0) {
+            averageValue = totalRevenue / memberCount;
+        }
+
+        summary += "Average Registration Value: $"
+                + String.format("%.2f", averageValue) + "\n";
 
         summary += "----------------------------------------\n";
 
@@ -311,12 +387,29 @@ public class GymBranch {
         return summary;
     }
 
-    // public String saveBranchData(String filename)
-
-    // public static GymBranch loadBranchData(String filename)
 
 
+    // Recalculates all branch statistics from the loaded member array.
+    public void recalculateStatsFromMembers() {
 
+        totalRevenue = 0.0;
+        totalVisits = 0;
+
+        shortDurationCount = 0;
+        midDurationCount = 0;
+        longDurationCount = 0;
+
+        trainerCount = 0;
+        lockerCount = 0;
+
+        for (int i = 0; i < planCounts.length; i++) {
+            planCounts[i] = 0;
+        }
+
+        for (int i = 0; i < memberCount; i++) {
+            addCounters(members[i]);
+        }
+    }
 
     // Adds this member's details to the branch statistics.
     private void addCounters(Member member) {
@@ -397,12 +490,315 @@ public class GymBranch {
         }
     }
 
-    // private void recalculateStatsFromMembers()
 
-    // private boolean isValidMemberData(...)
+    // // Loads branch data from a file and returns the created branch.
+    // public static GymBranch loadBranchData(String filename, String[] planNames, double[] planPrices) {
 
-    // private boolean isValidBranchData(...)
+    //     try {
 
+    //         Scanner fileScanner = new Scanner(new File(filename));
+
+    //         // Read branch statistics line
+    //         String branchLine = fileScanner.nextLine();
+
+    //         String[] branchParts = branchLine.split(",");
+
+    //         int branchId = Integer.parseInt(branchParts[0].trim());
+    //         String branchName = branchParts[1].trim();
+
+    //         // Create branch
+    //         GymBranch loadedBranch = new GymBranch(branchId, branchName, planNames);
+
+    //         // Read member lines
+    //         while (fileScanner.hasNextLine()) {
+
+    //             String memberLine =
+    //                 fileScanner.nextLine().trim();
+
+    //             // Skip blank lines
+    //             if (memberLine.isEmpty()) {
+    //                 continue;
+    //             }
+
+    //             String[] memberParts =
+    //                 memberLine.split(",");
+
+    //             int memberId =
+    //                 Integer.parseInt(memberParts[0].trim());
+
+    //             String name =
+    //                 memberParts[1].trim();
+
+    //             String planName =
+    //                 memberParts[2].trim();
+
+    //             int durationMonths =
+    //                 Integer.parseInt(memberParts[3].trim());
+
+    //             boolean hasTrainer =
+    //                 Boolean.parseBoolean(memberParts[4].trim());
+
+    //             int trainerSessions =
+    //                 Integer.parseInt(memberParts[5].trim());
+
+    //             boolean hasLocker =
+    //                 Boolean.parseBoolean(memberParts[6].trim());
+
+    //             // Find matching plan price
+
+    //             double planPrice = getPlanPriceFromArray(planName, planNames, planPrices);
+
+    //             if (planPrice == -1) {
+    //                 fileScanner.close();
+    //                 return null;
+    //             }
+
+    //             loadedBranch.registerMember(
+    //                 memberId,
+    //                 name,
+    //                 planName,
+    //                 planPrice,
+    //                 durationMonths,
+    //                 hasTrainer,
+    //                 trainerSessions,
+    //                 hasLocker
+    //             );
+    //         }
+
+    //         fileScanner.close();
+
+    //         return loadedBranch;
+    //     }
+    //     catch (Exception e) {
+    //         return null;
+    //     }
+    // }
+
+
+
+    private static boolean parseBoolean(String input) throws Exception {
+        if (input.equalsIgnoreCase("true")) {
+            return true;
+        }
+
+        if (input.equalsIgnoreCase("false")) {
+            return false;
+        }
+
+        throw new Exception();
+    }
+
+
+    public static int loadAllBranches(String filename, GymBranch[] branches, String[] planNames, double[] planPrices) {
+
+        try {
+            Scanner fileScanner = new Scanner(new File(filename));
+
+            int branchCount = 0;
+            GymBranch currentBranch = null;
+
+            int branchFieldCount = 5 + planNames.length + 5;
+
+            while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine().trim();
+
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                String[] parts = line.split(",");
+
+                if (parts.length == branchFieldCount) {
+
+                    if (branchCount >= branches.length) {
+                        currentBranch = null;
+                        continue;
+                    }
+
+                    int branchId = Integer.parseInt(parts[0].trim());
+                    String branchName = parts[1].trim();
+
+                    if (branchName.isEmpty()) {
+                        continue;
+                    }
+
+                    currentBranch = new GymBranch(branchId, branchName, planNames);
+
+                    branches[branchCount] = currentBranch;
+                    branchCount++;
+                }
+                else if (parts.length == 12) {
+
+                    if (currentBranch == null) {
+                        continue;
+                    }
+
+                    int memberId = Integer.parseInt(parts[0].trim());
+                    String name = parts[1].trim();
+                    String planName = parts[2].trim();
+                    int durationMonths = Integer.parseInt(parts[3].trim());
+
+                    boolean hasTrainer = parseBoolean(parts[4].trim());
+                    int trainerSessions = Integer.parseInt(parts[5].trim());
+                    boolean hasLocker = parseBoolean(parts[6].trim());
+
+                    double savedAddOns = Double.parseDouble(parts[7].trim());
+                    double savedSubtotal = Double.parseDouble(parts[8].trim());
+                    double savedTax = Double.parseDouble(parts[9].trim());
+                    double savedTotal = Double.parseDouble(parts[10].trim());
+                    int savedVisits = Integer.parseInt(parts[11].trim());
+
+                    double planPrice = getPlanPriceFromArray(planName, planNames, planPrices);
+                                        
+                    if (planPrice < 0) {
+                        continue;
+                    }
+
+                    if (name.isEmpty() || durationMonths < 1 || durationMonths > 12) {
+                        continue;
+                    }
+
+                    if (trainerSessions < 0 || trainerSessions > 4 || savedVisits < 0) {
+                        continue;
+                    }
+
+                    if (savedAddOns < 0 || savedSubtotal < 0 || savedTax < 0 || savedTotal < 0) {
+                        continue;
+                    }
+
+                    boolean added = currentBranch.addLoadedMember(
+                        memberId,
+                        name,
+                        planName,
+                        planPrice,
+                        durationMonths,
+                        hasTrainer,
+                        trainerSessions,
+                        hasLocker,
+                        savedSubtotal,
+                        savedTax,
+                        savedTotal,
+                        savedVisits
+                    );
+
+                    if (!added) {
+                        continue;
+                    }
+                }
+                else {
+                    continue;
+                }
+            }
+
+            fileScanner.close();
+            for (int i = 0; i < branchCount; i++) {
+                branches[i].recalculateStatsFromMembers();
+            }
+            return branchCount;
+        }
+        catch (Exception e) {
+            return -1;
+        }
+    }
+
+
+
+
+    // Returns all branch and member data formatted for file saving.
+    public String toFileString() {
+
+        String data = "";
+
+        data += branchId + ","
+            + branchName + ","
+            + String.format("%.2f", totalRevenue) + ","
+            + memberCount + ","
+            + totalVisits + ",";
+
+        for (int i = 0; i < planCounts.length; i++) {
+            data += planCounts[i] + ",";
+        }
+
+        data += shortDurationCount + ","
+            + midDurationCount + ","
+            + longDurationCount + ","
+            + trainerCount + ","
+            + lockerCount + "\n";
+
+        for (int i = 0; i < memberCount; i++) {
+            data += members[i].toFileString() + "\n";
+        }
+
+        return data;
+    }
+
+
+    // Saves all branches and their members to one text file.
+    public static String saveAllBranches(String filename, GymBranch[] branches, int branchCount) {
+
+        try {
+            PrintWriter writer = new PrintWriter(filename);
+
+            for (int i = 0; i < branchCount; i++) {
+                writer.print(branches[i].toFileString());
+            }
+
+            writer.close();
+
+            return "Branch data saved successfully.";
+        }
+        catch (Exception e) {
+            return "Error: Could not save branch data.";
+        }
+    }
+
+
+
+    // Adds a member from file data into this branch.
+    public boolean addLoadedMember(int memberId, String name, String planName, double planPrice, int durationMonths, boolean hasTrainer, int trainerSessions,
+                               boolean hasLocker, double savedSubtotal, double savedTax, double savedTotal, int savedVisits) {
+
+        if (isFull()) {
+            return false;
+        }
+
+        if (isDuplicateMemberId(memberId)) {
+            return false;
+        }
+
+        Member member = new Member(
+            memberId,
+            name,
+            planName,
+            planPrice,
+            durationMonths,
+            hasTrainer,
+            trainerSessions,
+            hasLocker
+        );
+
+        member.loadSavedData(savedSubtotal, savedTax, savedTotal, savedVisits);
+
+        members[memberCount] = member;
+        memberCount++;
+
+        addCounters(member);
+
+        return true;
+    }
+
+
+    // Finds the price of a plan from the loaded plans array.
+    private static double getPlanPriceFromArray(String planName, String[] planNames, double[] planPrices) {
+
+        for (int i = 0; i < planNames.length; i++) {
+            if (planNames[i].equalsIgnoreCase(planName)) {
+                return planPrices[i];
+            }
+        }
+
+        return -1;
+    }
 
 
     // Generates a unique member ID for this branch.
@@ -472,6 +868,26 @@ public class GymBranch {
     // Returns the number of registered members.
     public int getMemberCount() {
         return memberCount;
+    }
+
+    public String getLastMemberPlanName() {
+        return members[memberCount - 1].getPlanName();
+    }
+
+    public int getLastMemberDuration() {
+        return members[memberCount - 1].getDurationMonths();
+    }
+
+    public boolean getLastMemberHasTrainer() {
+        return members[memberCount - 1].hasTrainer();
+    }
+
+    public int getLastMemberTrainerSessions() {
+        return members[memberCount - 1].getTrainerSessions();
+    }
+
+    public boolean getLastMemberHasLocker() {
+        return members[memberCount - 1].hasLocker();
     }
 
 }

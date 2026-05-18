@@ -30,8 +30,14 @@ public class GymSystemUI {
     
     private void run() {
         scanner = new Scanner(System.in);
-        System.out.println(System.getProperty("user.dir"));
+
         loadPlans();
+
+        if (branchCount == 0) {
+            branches[0] = new GymBranch(1000, "Default Branch", planNames);
+            branchCount = 1;
+            activeBranchIndex = 0;
+        }
 
         boolean running = true;
 
@@ -74,18 +80,70 @@ public class GymSystemUI {
         System.out.println("========================================");
     }
 
+    // Handles the selected main menu option.
     private void handleMenuChoice(int choice) {
+
         switch (choice) {
+
+            // Manage branches menu
             case 1:
                 manageBranches();
                 break;
+
+            // View all membership plans
             case 2:
                 viewMembershipPlans();
                 break;
+
+            // Register a new member
             case 3:
-                // registerNewMember();
+                registerNewMember();
                 break;
-    
+
+            // Record a gym visit
+            case 4:
+                recordGymVisit();
+                break;
+
+            // View member and branch summaries
+            case 5:
+                viewMemberSummary();
+                break;
+
+            // Compare membership plans
+            case 6:
+                compareMembershipPlans();
+                break;
+
+            // Simulate promotional offer
+            case 7:
+                simulatePromotionalOffer();
+                break;
+
+            // Modify the last registration
+            case 8:
+                modifyLastRegistration();
+                break;
+
+            // Cancel the last registration
+            case 9:
+                cancelLastRegistration();
+                break;
+
+            // View all registered members
+            case 10:
+                viewAllRegisteredMembers();
+                break;
+
+            // Save branch data
+            case 11:
+                saveBranchData();
+                break;
+
+            // Load branch data
+            case 12:
+                loadBranchData();
+                break;
         }
     }
 
@@ -293,42 +351,71 @@ public class GymSystemUI {
         pause();
     }
 
+    // Allows the user to select the active branch.
     private void selectBranch() {
+
+        // Clear the console before displaying the menu
         clear();
 
+        // Display menu heading
         System.out.println("========================================");
         System.out.println("            SELECT BRANCH");
         System.out.println("========================================");
 
+        // Check if any branches exist
         if (branchCount == 0) {
+
+            // Display error message
             System.out.println("Error: No branches available.");
+
+            // Pause before returning
             pause();
             return;
         }
 
+        // Get branch ID from the user
         int branchId = getIntInRange("Enter branch ID: ", 1, 999999);
 
+        // Search for the matching branch
         for (int i = 0; i < branchCount; i++) {
+
+            // Check if the branch ID matches
             if (branches[i].getBranchId() == branchId) {
+
+                // Set the selected branch as active
                 activeBranchIndex = i;
-                System.out.println("Active branch changed to: " + branches[i].getBranchName());
+
+                // Display success message
+                System.out.println(
+                    "Active branch changed to: "
+                    + branches[i].getBranchName()
+                );
+
+                // Pause before returning
                 pause();
                 return;
             }
         }
 
+        // Display error if branch ID was not found
         System.out.println("Error: Branch ID not found.");
+
+        // Pause before returning
         pause();
     }
 
+    // Returns the currently active branch.
+    // Returns null if no active branch exists.
     private GymBranch activeBranch() {
+
+        // Check if an active branch has been selected
         if (activeBranchIndex == -1) {
             return null;
         }
 
+        // Return the active branch
         return branches[activeBranchIndex];
     }
-
 
 
 
@@ -386,6 +473,9 @@ public class GymSystemUI {
             // Display section divider
             System.out.println("----------------------------------------");
         }
+        System.out.println("Add-Ons:");
+        System.out.println("Personal Trainer Session: $25.00 per session/month");
+        System.out.println("Locker Rental: $10.00 per month");
 
         // Pause before returning to the menu
         pause();
@@ -577,107 +667,459 @@ public class GymSystemUI {
 
     private void registerNewMember() {
         clear();
+
         System.out.println("========================================");
         System.out.println("        REGISTER NEW MEMBER");
         System.out.println("========================================");
 
-        System.out.println("Register member UI will go here.");
+        if (activeBranch() == null) {
+            System.out.println("Error: No active branch selected.");
+            pause();
+            return;
+        }
 
+        int memberId = getIntInRange("Enter member ID: ", 1, 999999);
+        String name = getNonEmptyString("Enter member name: ");
+
+        String planName = getPlanType("Enter membership plan: ");
+        
+        double planPrice = 0;
+
+        for (int i = 0; i < planCount; i++) {
+
+            if (planNames[i].equalsIgnoreCase(planName)) {
+                planPrice = planPrices[i];
+                break;
+            }
+        }
+
+        int duration = getIntInRange("Enter duration in months: ", 1, 12);
+
+        boolean hasTrainer = getYesNo("Add personal trainer sessions? (Y/N): ");
+        int trainerSessions = 0;
+
+        if (hasTrainer) {
+            trainerSessions = getIntInRange("Enter trainer sessions per month (1-4): ", 1, 4);
+        }
+
+        boolean hasLocker = getYesNo("Add locker rental? (Y/N): ");
+
+        String result = activeBranch().registerMember(
+            memberId,
+            name,
+            planName,
+            planPrice,
+            duration,
+            hasTrainer,
+            trainerSessions,
+            hasLocker
+        );
+
+        System.out.println(result);
         pause();
     }
 
 
+    // Records a gym visit for the most recently registered member
+    // in the currently active branch.
     private void recordGymVisit() {
+
+        // Clear the console before displaying the menu
         clear();
+
+        // Display menu heading
         System.out.println("========================================");
         System.out.println("          RECORD GYM VISIT");
         System.out.println("========================================");
 
-        System.out.println("Record visit UI will go here.");
+        // Check if an active branch exists
+        if (activeBranch() == null) {
 
+            // Display error message
+            System.out.println("Error: No active branch selected.");
+
+            // Pause before returning
+            pause();
+            return;
+        }
+
+        // Record the visit and display the result message
+        System.out.println(
+            activeBranch().recordVisitForLastMember()
+        );
+
+        // Pause before returning
         pause();
     }
 
 
+    // Displays statistics for all branches and the last member in the active branch.
     private void viewMemberSummary() {
+
         clear();
+
         System.out.println("========================================");
         System.out.println("          MEMBER SUMMARY");
         System.out.println("========================================");
 
-        System.out.println("Member summary UI will go here.");
+        if (branchCount == 0) {
+            System.out.println("No branches have been created.");
+            pause();
+            return;
+        }
+
+        // Display statistics for every branch
+        for (int i = 0; i < branchCount; i++) {
+            System.out.println(branches[i].getBranchStatsSummary());
+            System.out.println();
+        }
+
+        System.out.println("========================================");
+        System.out.println("      ACTIVE BRANCH LAST MEMBER");
+        System.out.println("========================================");
+
+        if (activeBranch() == null) {
+            System.out.println("No active branch selected.");
+        }
+        else {
+            System.out.println(activeBranch().getLastMemberSummary());
+        }
 
         pause();
     }
 
 
+    // Compares the total cost of two different membership plans.
     private void compareMembershipPlans() {
+
         clear();
+
         System.out.println("========================================");
         System.out.println("       COMPARE MEMBERSHIP PLANS");
         System.out.println("========================================");
 
-        System.out.println("Plan comparison UI will go here.");
+        // Get first plan
+        String firstPlanName = getPlanType("Enter first plan name: ");
+        double firstPlanPrice = getPlanPriceByName(firstPlanName);
+
+        // Get second plan
+        String secondPlanName = getPlanType("Enter second plan name: ");
+
+        // Ensure the plans are different
+        while (firstPlanName.equalsIgnoreCase(secondPlanName)) {
+            System.out.println("Error: Plans must be different.");
+            secondPlanName = getPlanType("Enter second plan name: ");
+        }
+
+        double secondPlanPrice = getPlanPriceByName(secondPlanName);
+
+        // Get duration
+        int duration = getIntInRange("Enter duration in months: ", 1, 12);
+
+        // Calculate totals with GST
+        double firstTotal = firstPlanPrice * duration * 1.10;
+        double secondTotal = secondPlanPrice * duration * 1.10;
+
+        System.out.println("----------------------------------------");
+        System.out.println(firstPlanName + " Total: $" + formatCurrency(firstTotal));
+        System.out.println(secondPlanName + " Total: $" + formatCurrency(secondTotal));
+        System.out.println("----------------------------------------");
+
+        if (firstTotal < secondTotal) {
+            System.out.println(firstPlanName + " is cheaper by $" + formatCurrency(secondTotal - firstTotal));
+        }
+        else if (secondTotal < firstTotal) {
+            System.out.println(secondPlanName + " is cheaper by $" + formatCurrency(firstTotal - secondTotal));
+        }
+        else {
+            System.out.println("Both plans cost the same.");
+        }
 
         pause();
     }
 
 
+    // Registers a new member with a randomly selected promotional offer.
     private void simulatePromotionalOffer() {
+
         clear();
+
         System.out.println("========================================");
         System.out.println("      SIMULATE PROMOTIONAL OFFER");
         System.out.println("========================================");
 
-        System.out.println("Promotional offer UI will go here.");
+        if (activeBranch() == null) {
+            System.out.println("Error: No active branch selected.");
+            pause();
+            return;
+        }
+
+        int memberId = getIntInRange("Enter member ID: ", 1, 999999);
+        String name = getNonEmptyString("Enter member name: ");
+
+        String planName = getPlanType("Enter membership plan: ");
+        double planPrice = getPlanPriceByName(planName);
+
+        int duration = getIntInRange("Enter duration in months: ", 1, 12);
+
+        boolean hasTrainer = getYesNo("Add personal trainer sessions? (Y/N): ");
+        int trainerSessions = 0;
+
+        if (hasTrainer) {
+            trainerSessions = getIntInRange("Enter trainer sessions per month (1-4): ", 1, 4);
+        }
+
+        boolean hasLocker = getYesNo("Add locker rental? (Y/N): ");
+
+        System.out.println(
+            activeBranch().registerPromotionalMember(
+                memberId,
+                name,
+                planName,
+                planPrice,
+                duration,
+                hasTrainer,
+                trainerSessions,
+                hasLocker
+            )
+        );
 
         pause();
     }
 
 
+    // Modifies the most recently registered member in the active branch.
     private void modifyLastRegistration() {
+
         clear();
+
         System.out.println("========================================");
         System.out.println("       MODIFY LAST REGISTRATION");
         System.out.println("========================================");
 
-        System.out.println("Modify registration UI will go here.");
+        if (activeBranch() == null) {
+            System.out.println("Error: No active branch selected.");
+            pause();
+            return;
+        }
+
+        if (activeBranch().getMemberCount() <= 0) {
+            System.out.println("Error: No members are registered in this branch.");
+            pause();
+            return;
+        }
+
+        String newPlanName = activeBranch().getLastMemberPlanName();
+        int newDuration = activeBranch().getLastMemberDuration();
+        boolean newHasTrainer = activeBranch().getLastMemberHasTrainer();
+        int newTrainerSessions = activeBranch().getLastMemberTrainerSessions();
+        boolean newHasLocker = activeBranch().getLastMemberHasLocker();
+
+        System.out.println("Enter new plan name or press Enter to keep current (" + newPlanName + "): ");
+        String planInput = scanner.nextLine().trim();
+
+        if (!planInput.isEmpty()) {
+            while (getValidatedPlanFromText(planInput) == null) {
+                System.out.println("Error: " + planInput + " is Not a Valid Plan");
+                System.out.println("Enter new plan name or press Enter to keep current: ");
+                planInput = scanner.nextLine().trim();
+
+                if (planInput.isEmpty()) {
+                    break;
+                }
+            }
+
+            if (!planInput.isEmpty()) {
+                newPlanName = getValidatedPlanFromText(planInput);
+            }
+        }
+
+        double newPlanPrice = getPlanPriceByName(newPlanName);
+
+        System.out.println("Enter new duration or press Enter to keep current (" + newDuration + "): ");
+        String durationInput = scanner.nextLine().trim();
+
+        if (!durationInput.isEmpty()) {
+            while (true) {
+                try {
+                    int value = Integer.parseInt(durationInput);
+
+                    if (value >= 1 && value <= 12) {
+                        newDuration = value;
+                        break;
+                    }
+                    else {
+                        System.out.println("Error: " + durationInput + " Not In Range 1-12");
+                    }
+                }
+                catch (NumberFormatException e) {
+                    System.out.println("Error: " + durationInput + " Not A Number");
+                }
+
+                System.out.println("Enter new duration or press Enter to keep current: ");
+                durationInput = scanner.nextLine().trim();
+
+                if (durationInput.isEmpty()) {
+                    break;
+                }
+            }
+        }
+
+        System.out.println("Change trainer option? Current (" + (newHasTrainer ? "Yes" : "No") + ") (Y/N or Enter to keep): ");
+        String trainerInput = scanner.nextLine().trim();
+
+        if (!trainerInput.isEmpty()) {
+            while (!trainerInput.equalsIgnoreCase("y")
+                    && !trainerInput.equalsIgnoreCase("yes")
+                    && !trainerInput.equalsIgnoreCase("n")
+                    && !trainerInput.equalsIgnoreCase("no")) {
+
+                System.out.println("Error: " + trainerInput + " is Not a Yes or No");
+                System.out.println("Change trainer option? (Y/N or Enter to keep): ");
+                trainerInput = scanner.nextLine().trim();
+
+                if (trainerInput.isEmpty()) {
+                    break;
+                }
+            }
+
+            if (trainerInput.equalsIgnoreCase("y") || trainerInput.equalsIgnoreCase("yes")) {
+                newHasTrainer = true;
+                newTrainerSessions = getIntInRange("Enter trainer sessions or press Enter to keep current (" + newTrainerSessions + "): ", 1, 4);
+            }
+            else if (trainerInput.equalsIgnoreCase("n") || trainerInput.equalsIgnoreCase("no")) {
+                newHasTrainer = false;
+                newTrainerSessions = 0;
+            }
+        }
+
+        
+
+        System.out.println("Change locker option? Current (" + (newHasLocker ? "Yes" : "No") + ") (Y/N or Enter to keep): ");
+        String lockerInput = scanner.nextLine().trim();
+
+        if (!lockerInput.isEmpty()) {
+            while (!lockerInput.equalsIgnoreCase("y")
+                    && !lockerInput.equalsIgnoreCase("yes")
+                    && !lockerInput.equalsIgnoreCase("n")
+                    && !lockerInput.equalsIgnoreCase("no")) {
+
+                System.out.println("Error: " + lockerInput + " is Not a Yes or No");
+                System.out.println("Change locker option? (Y/N or Enter to keep): ");
+                lockerInput = scanner.nextLine().trim();
+
+                if (lockerInput.isEmpty()) {
+                    break;
+                }
+            }
+
+            if (lockerInput.equalsIgnoreCase("y") || lockerInput.equalsIgnoreCase("yes")) {
+                newHasLocker = true;
+            }
+            else if (lockerInput.equalsIgnoreCase("n") || lockerInput.equalsIgnoreCase("no")) {
+                newHasLocker = false;
+            }
+        }
+
+        System.out.println(
+            activeBranch().modifyLastRegistration(
+                newPlanName,
+                newPlanPrice,
+                newDuration,
+                newHasTrainer,
+                newTrainerSessions,
+                newHasLocker
+            )
+        );
 
         pause();
     }
 
 
+    // Cancels the most recently registered member
+    // from the currently active branch.
     private void cancelLastRegistration() {
+
+        // Clear the console before displaying the menu
         clear();
+
+        // Display menu heading
         System.out.println("========================================");
         System.out.println("       CANCEL LAST REGISTRATION");
         System.out.println("========================================");
 
-        System.out.println("Cancel registration UI will go here.");
+        // Check if an active branch exists
+        if (activeBranch() == null) {
 
+            // Display error message
+            System.out.println("Error: No active branch selected.");
+
+            // Pause before returning
+            pause();
+            return;
+        }
+
+        // Cancel the registration and display the result message
+        System.out.println(
+            activeBranch().cancelLastRegistration()
+        );
+
+        // Pause before returning
         pause();
     }
 
 
+    // Displays all registered members in the active branch.
     private void viewAllRegisteredMembers() {
+
+        // Clear the console before displaying members
         clear();
+
+        // Display menu heading
         System.out.println("========================================");
         System.out.println("       ALL REGISTERED MEMBERS");
         System.out.println("========================================");
 
-        System.out.println("Registered members UI will go here.");
+        // Check if an active branch exists
+        if (activeBranch() == null) {
 
+            // Display error message
+            System.out.println("Error: No active branch selected.");
+
+            // Pause before returning
+            pause();
+            return;
+        }
+
+        // Display the formatted member table
+        System.out.println(
+            activeBranch().getAllMembersTable()
+        );
+
+        // Pause before returning
         pause();
     }
 
 
+    // Saves all branch data to a text file.
     private void saveBranchData() {
         clear();
+
         System.out.println("========================================");
         System.out.println("          SAVE BRANCH DATA");
         System.out.println("========================================");
 
-        System.out.println("Save branch data UI will go here.");
+        if (branchCount == 0) {
+            System.out.println("Error: No branches available to save.");
+            pause();
+            return;
+        }
+
+        String filename = "branchData.txt";
+
+        System.out.println(
+            GymBranch.saveAllBranches(filename, branches, branchCount)
+        );
 
         pause();
     }
@@ -685,14 +1127,68 @@ public class GymSystemUI {
 
     private void loadBranchData() {
         clear();
+
         System.out.println("========================================");
         System.out.println("          LOAD BRANCH DATA");
         System.out.println("========================================");
 
-        System.out.println("Load branch data UI will go here.");
+        String filename = "branchData.txt";
+
+        int loadedCount = GymBranch.loadAllBranches(
+            filename,
+            branches,
+            planNames,
+            planPrices
+        );
+
+        if (loadedCount == -1) {
+            System.out.println("Error: Could not load branch data.");
+        }
+        else {
+            branchCount = loadedCount;
+
+            if (branchCount > 0) {
+                activeBranchIndex = 0;
+            }
+            else {
+                activeBranchIndex = -1;
+            }
+
+            System.out.println("Branch data loaded successfully.");
+        }
 
         pause();
     }
+
+    // Returns the price for a membership plan name.
+    private double getPlanPriceByName(String planName) {
+
+        // Loop through all loaded plans
+        for (int i = 0; i < planCount; i++) {
+
+            // Check if the plan name matches
+            if (planNames[i].equalsIgnoreCase(planName)) {
+
+                // Return the matching plan price
+                return planPrices[i];
+            }
+        }
+
+        // Return zero if the plan was not found
+        return 0.0;
+    }
+
+
+
+
+
+
+
+
+
+    
+
+
 
 //
 //
@@ -718,6 +1214,48 @@ private String formatCurrency(double value) {
 // Safe input helpers
 //
 //
+
+
+    // Safely gets a valid membership plan name from the user.
+    private String getPlanType(String prompt) {
+
+        // Continue prompting until a valid plan is entered
+        while (true) {
+
+            // Display available plans
+            System.out.println("\nAvailable Plans: ");
+
+            for (int i = 0; i < planCount; i++) {
+
+                System.out.println(
+                    "- " + planNames[i]
+                    + " ($" + formatCurrency(planPrices[i]) + ")"
+                );
+            }
+
+            // Get user input
+            String input = getNonEmptyString(prompt);
+
+            // Check if the entered plan exists
+            for (int i = 0; i < planCount; i++) {
+
+                if (planNames[i].equalsIgnoreCase(input)) {
+
+                    // Return the correctly formatted stored plan name
+                    return planNames[i];
+                }
+            }
+
+            // Display error message if plan does not exist
+            System.out.println(
+                "Error: " + input + " is Not a Valid Plan"
+            );
+
+            pause();
+        }
+    }
+
+
 
     // Safely gets an integer input from the user within a specified range.
     // Continues prompting the user until a valid number is entered.
@@ -759,6 +1297,17 @@ private String formatCurrency(double value) {
                 pause();
             }
         }
+    }
+
+
+    private String getValidatedPlanFromText(String input) {
+        for (int i = 0; i < planCount; i++) {
+            if (planNames[i].equalsIgnoreCase(input)) {
+                return planNames[i];
+            }
+        }
+
+        return null;
     }
 
 
@@ -871,7 +1420,6 @@ private String formatCurrency(double value) {
     }
 
 
-    // private String getPlanType(String prompt)
 
 
     // Pauses the program until the user presses Enter.
