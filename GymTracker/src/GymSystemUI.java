@@ -18,11 +18,21 @@ public class GymSystemUI {
         ui.run();
     }
 
+    public GymSystemUI() {
+        scanner = new Scanner(System.in);
+
+        branches = new GymBranch[3];
+
+        branchCount = 0;
+        activeBranchIndex = -1;
+        
+    }
     
     private void run() {
         scanner = new Scanner(System.in);
         System.out.println(System.getProperty("user.dir"));
         loadPlans();
+
         boolean running = true;
 
         while (running) {
@@ -67,7 +77,7 @@ public class GymSystemUI {
     private void handleMenuChoice(int choice) {
         switch (choice) {
             case 1:
-                // manageBranches();
+                manageBranches();
                 break;
             case 2:
                 viewMembershipPlans();
@@ -79,49 +89,309 @@ public class GymSystemUI {
         }
     }
 
+
+
+    //
+    //
+    // Branch UI
+    //
+    //
+
+
+
+
+   // Displays the branch management menu and handles branch actions.
     private void manageBranches() {
+
+        // Controls the branch management loop
+        boolean managing = true;
+
+        // Continue showing the menu until the user chooses to return
+        while (managing) {
+
+            // Clear the console before displaying the menu
+            clear();
+
+            // Display menu heading
+            System.out.println("========================================");
+            System.out.println("           MANAGE BRANCHES");
+            System.out.println("========================================");
+
+            // Display branch management options
+            System.out.println("1. Create Branch");
+            System.out.println("2. Select Active Branch");
+            System.out.println("3. View Branches");
+            System.out.println("4. Return");
+
+            System.out.println("========================================");
+
+            // Get validated menu choice from the user
+            int choice = getIntInRange("Enter choice: ", 1, 4);
+
+            // Handle selected menu option
+            switch (choice) {
+
+                // Create a new branch
+                case 1:
+                    createBranch();
+                    break;
+
+                // Select the active branch
+                case 2:
+                    selectBranch();
+                    break;
+
+                // View all created branches
+                case 3:
+                    viewBranches();
+                    break;
+
+                // Return to the main menu
+                case 4:
+                    managing = false;
+                    break;
+            }
+        }
+    }
+
+    // Checks whether a branch ID already exists.
+    private boolean isDuplicateBranchId(int branchId) {
+
+        // Loop through all existing branches
+        for (int i = 0; i < branchCount; i++) {
+
+            // Check if the branch ID already exists
+            if (branches[i].getBranchId() == branchId) {
+                return true;
+            }
+        }
+
+        // Branch ID is unique
+        return false;
+    }
+
+    // Generates a random unique branch ID.
+    private int generateUniqueBranchId() {
+
+        int newId = 1000;
+
+        // Continue generating IDs until a unique ID is found
+        while (isDuplicateBranchId(newId)) {
+            newId++;
+        }
+
+        // Return the unique branch ID
+        return newId;
+    }
+
+
+    // Creates a new gym branch.
+    private void createBranch() {
+
         clear();
+
         System.out.println("========================================");
-        System.out.println("           MANAGE BRANCHES");
+        System.out.println("           CREATE BRANCH");
         System.out.println("========================================");
 
-        System.out.println("Branch management will go here.");
+        // Check if the maximum number of branches has been reached
+        if (branchCount >= branches.length) {
+
+            System.out.println("Error: Maximum number of branches reached.");
+            pause();
+            return;
+        }
+
+        // Get branch details from the user
+        int branchId = getIntInRange("Enter branch ID: ", 1, 999999);
+
+        String branchName = getNonEmptyString("Enter branch name: ");
+
+        // Track whether the ID had to be changed
+        boolean idChanged = false;
+
+        // Generate a new ID if the entered ID already exists
+        if (isDuplicateBranchId(branchId)) {
+
+            branchId = generateUniqueBranchId();
+
+            idChanged = true;
+        }
+
+        // Create the new branch
+        branches[branchCount] =
+            new GymBranch(branchId, branchName, planNames);
+
+        // Set the new branch as active
+        activeBranchIndex = branchCount;
+
+        // Increase total branch count
+        branchCount++;
+
+        // Display success message
+        System.out.println("Branch created successfully.");
+
+        // Display generated ID message if needed
+        if (idChanged) {
+
+            System.out.println(
+                "Entered branch ID already existed."
+            );
+
+            System.out.println(
+                "New branch ID assigned: " + branchId
+            );
+        }
+
+        // Display active branch information
+        System.out.println(
+            "Active branch set to: " + branchName
+        );
 
         pause();
     }
+
+    // Displays all created branches.
+    private void viewBranches() {
+
+        // Clear the console before displaying branches
+        clear();
+
+        // Display menu heading
+        System.out.println("========================================");
+        System.out.println("             BRANCHES");
+        System.out.println("========================================");
+
+        // Check if any branches exist
+        if (branchCount == 0) {
+
+            // Display message if no branches exist
+            System.out.println("No branches have been created.");
+
+            // Pause before returning
+            pause();
+            return;
+        }
+
+        // Loop through all branches
+        for (int i = 0; i < branchCount; i++) {
+
+            // Display active branch indicator
+            if (i == activeBranchIndex) {
+                System.out.print("[ACTIVE] ");
+            }
+
+            // Display branch details
+            System.out.println(
+                branches[i].getBranchId()
+                + " - "
+                + branches[i].getBranchName()
+            );
+        }
+
+        // Pause before returning
+        pause();
+    }
+
+    private void selectBranch() {
+        clear();
+
+        System.out.println("========================================");
+        System.out.println("            SELECT BRANCH");
+        System.out.println("========================================");
+
+        if (branchCount == 0) {
+            System.out.println("Error: No branches available.");
+            pause();
+            return;
+        }
+
+        int branchId = getIntInRange("Enter branch ID: ", 1, 999999);
+
+        for (int i = 0; i < branchCount; i++) {
+            if (branches[i].getBranchId() == branchId) {
+                activeBranchIndex = i;
+                System.out.println("Active branch changed to: " + branches[i].getBranchName());
+                pause();
+                return;
+            }
+        }
+
+        System.out.println("Error: Branch ID not found.");
+        pause();
+    }
+
+    private GymBranch activeBranch() {
+        if (activeBranchIndex == -1) {
+            return null;
+        }
+
+        return branches[activeBranchIndex];
+    }
+
+
+
+
+
+    //
+    //
+    // Member UI
+    //
+    //
+
+
+
 
 
 
     // Displays all loaded membership plans and their details.
     private void viewMembershipPlans() {
 
+        // Clear the console before displaying plan information
         clear();
 
+        // Display menu heading
         System.out.println("========================================");
         System.out.println("         MEMBERSHIP PLANS");
         System.out.println("========================================");
 
-        // Check if any plans exist
+        // Check if any plans are loaded
         if (planCount == 0) {
 
+            // Display message if no plans exist
             System.out.println("No Membership Plans Available.");
+
+            // Pause before returning to the menu
             pause();
             return;
         }
 
-        // Display all loaded plans
+        // Loop through all loaded plans
         for (int i = 0; i < planCount; i++) {
 
+            // Display plan number
             System.out.println("Plan " + (i + 1));
+
+            // Display plan name
             System.out.println("Name: " + planNames[i]);
-            System.out.println("Price: $" + String.format("%.2f", planPrices[i]));
+
+            // Display formatted monthly plan price
+            System.out.println(
+                "Price: $" + String.format("%.2f", planPrices[i])
+            );
+
+            // Display plan features
             System.out.println("Features: " + planFeatures[i]);
 
+            // Display section divider
             System.out.println("----------------------------------------");
         }
 
+        // Pause before returning to the menu
         pause();
     }
+
+
 
     // Loads membership plans from the plans.txt configuration file.
     // Invalid plans are skipped and default plans are loaded if no valid plans exist.
@@ -423,6 +693,23 @@ public class GymSystemUI {
 
         pause();
     }
+
+//
+//
+// Formatting
+//
+//
+
+private String formatCurrency(double value) {
+    return String.format("%.2f", value);
+}
+
+
+
+
+
+
+
 
 
 
