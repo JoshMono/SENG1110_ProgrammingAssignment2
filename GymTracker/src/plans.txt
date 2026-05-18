@@ -1,0 +1,4 @@
+Basic ,49.99 , Gym floor access only
+Standard ,49.99 , Gym floor + group classes
+asdasdwaq21 ,79.99 , Gym floor + classes + pool + sauna
+asdasdwaq1221 ,79.99 , Gym floor + classes + pool + sauna
