@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.Scanner;
 
 public class GymSystemUI {
@@ -61,6 +62,20 @@ public class GymSystemUI {
     private void displayMainMenu() {
         System.out.println("========================================");
         System.out.println("        GYM MEMBERSHIP SYSTEM");
+        System.out.println("========================================");
+        
+        if (activeBranch() == null) {
+            System.out.println("Active Branch: None");
+        }
+        else {
+            System.out.println(
+                "Active Branch: "
+                + activeBranch().getBranchId()
+                + " - "
+                + activeBranch().getBranchName()
+            );
+        }
+
         System.out.println("========================================");
 
         System.out.println("1.  Manage Branches");
@@ -582,14 +597,39 @@ public class GymSystemUI {
             System.out.println("Plans Loaded Successfully.");
         }
 
-        // Handles file loading and parsing errors
         catch (Exception e) {
 
-            // Display error message
-            System.out.println("Error: Could Not Load plans.txt");
+            System.out.println("plans.txt not found.");
+            System.out.println("Creating default plans file...");
 
-            // Load fallback default plans
+            // Default plans
             loadDefaultPlans();
+
+            planCount = 3;
+
+            // Create new plans.txt file
+            try {
+
+                PrintWriter writer = new PrintWriter("plans.txt");
+
+                for (int i = 0; i < planCount; i++) {
+
+                    writer.println(
+                        planNames[i] + ","
+                        + planPrices[i] + ","
+                        + planFeatures[i]
+                    );
+                }
+
+                writer.close();
+
+                System.out.println("Default plans.txt created successfully.");
+            }
+            
+            catch (Exception fileError) {
+
+                System.out.println("Error: Could not create default plans file.");
+            }
         }
     }
 
@@ -1311,47 +1351,6 @@ private String formatCurrency(double value) {
     }
 
 
-    // Safely gets a double input from the user within a specified range.
-    // Continues prompting the user until a valid number is entered.
-    private double getDoubleInRange(String prompt, double min, double max){
-        // Infinite loop continues until a valid value is returned
-        while (true) {
-
-            // Display the input prompt to the user
-            System.out.println(prompt);
-
-            // Read the users full input as a String
-            String input = scanner.nextLine();
-
-            try {
-
-                // Attempt to convert the input into a double
-                double value = Double.parseDouble(input);
-
-                // Check if the value is within the allowed range
-                if (value >= min && value <= max) {
-
-                    // Return the validated double
-                    return value;
-                }
-                else {
-
-                    // Display range error message if number is outside limits
-                    System.out.println("Error: " + input + " Not In Range " + min + "-" + max);
-                    pause();
-                }
-            }
-
-            // Handles invalid numeric input such as letters or symbols
-            catch (NumberFormatException e) {
-
-                // Display error message for invalid number format
-                System.out.println("Error: " + input + " Not A Number");
-                pause();
-            }
-        }
-    }
-
 
     // Safely gets a non-empty String input from the user.
     // Continues prompting until valid text is entered.
@@ -1427,7 +1426,7 @@ private String formatCurrency(double value) {
     private void pause() {
 
         // Display pause message to the user
-        System.out.println("\nPress Enter to continue...");
+        System.out.print("\nPress Enter to continue...");
 
         // Wait for the user to press Enter
         scanner.nextLine();
