@@ -1195,6 +1195,13 @@ public class GymSystemUI {
             }
 
             System.out.println("Branch data loaded successfully.");
+
+            String errors = GymBranch.getLoadErrors();
+
+            if (!errors.isEmpty()) {
+                System.out.println("\nSome lines were skipped:");
+                System.out.println(errors);
+            }
         }
 
         pause();

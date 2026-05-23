@@ -36,6 +36,8 @@ public class GymBranch {
     private int trainerCount;
     private int lockerCount;
 
+    private static String loadErrors = "";
+
 
     // Creates a gym branch with its own member storage and statistics.
     public GymBranch(int branchId, String branchName, String[] planNames) {
@@ -491,90 +493,6 @@ public class GymBranch {
     }
 
 
-    // // Loads branch data from a file and returns the created branch.
-    // public static GymBranch loadBranchData(String filename, String[] planNames, double[] planPrices) {
-
-    //     try {
-
-    //         Scanner fileScanner = new Scanner(new File(filename));
-
-    //         // Read branch statistics line
-    //         String branchLine = fileScanner.nextLine();
-
-    //         String[] branchParts = branchLine.split(",");
-
-    //         int branchId = Integer.parseInt(branchParts[0].trim());
-    //         String branchName = branchParts[1].trim();
-
-    //         // Create branch
-    //         GymBranch loadedBranch = new GymBranch(branchId, branchName, planNames);
-
-    //         // Read member lines
-    //         while (fileScanner.hasNextLine()) {
-
-    //             String memberLine =
-    //                 fileScanner.nextLine().trim();
-
-    //             // Skip blank lines
-    //             if (memberLine.isEmpty()) {
-    //                 continue;
-    //             }
-
-    //             String[] memberParts =
-    //                 memberLine.split(",");
-
-    //             int memberId =
-    //                 Integer.parseInt(memberParts[0].trim());
-
-    //             String name =
-    //                 memberParts[1].trim();
-
-    //             String planName =
-    //                 memberParts[2].trim();
-
-    //             int durationMonths =
-    //                 Integer.parseInt(memberParts[3].trim());
-
-    //             boolean hasTrainer =
-    //                 Boolean.parseBoolean(memberParts[4].trim());
-
-    //             int trainerSessions =
-    //                 Integer.parseInt(memberParts[5].trim());
-
-    //             boolean hasLocker =
-    //                 Boolean.parseBoolean(memberParts[6].trim());
-
-    //             // Find matching plan price
-
-    //             double planPrice = getPlanPriceFromArray(planName, planNames, planPrices);
-
-    //             if (planPrice == -1) {
-    //                 fileScanner.close();
-    //                 return null;
-    //             }
-
-    //             loadedBranch.registerMember(
-    //                 memberId,
-    //                 name,
-    //                 planName,
-    //                 planPrice,
-    //                 durationMonths,
-    //                 hasTrainer,
-    //                 trainerSessions,
-    //                 hasLocker
-    //             );
-    //         }
-
-    //         fileScanner.close();
-
-    //         return loadedBranch;
-    //     }
-    //     catch (Exception e) {
-    //         return null;
-    //     }
-    // }
-
-
 
     private static boolean parseBoolean(String input) throws Exception {
         if (input.equalsIgnoreCase("true")) {
@@ -651,22 +569,32 @@ public class GymBranch {
                     double planPrice = getPlanPriceFromArray(planName, planNames, planPrices);
                                         
                     if (planPrice < 0) {
+                        loadErrors += "Error: " + memberId + " failed to add. Plan name not found.\n";
                         continue;
                     }
 
                     if (name.isEmpty() || durationMonths < 1 || durationMonths > 12) {
+                        loadErrors += "Error: " + memberId + " failed to add. Invalid plan duration.\n";
                         continue;
                     }
 
                     if (trainerSessions < 0 || trainerSessions > 4 || savedVisits < 0) {
+                        loadErrors += "Error: " + memberId + " failed to add. Invalid trainer sessions or visits.\n";
                         continue;
                     }
 
                     if (savedAddOns < 0 || savedSubtotal < 0 || savedTax < 0 || savedTotal < 0) {
+                        loadErrors += "Error: " + memberId + " failed to add. Invalid member details.\n";
                         continue;
                     }
+                    
+                    if (!hasTrainer && trainerSessions > 0) {
+                        loadErrors += "Error: " + memberId + " failed to add. Trainer sessions without trainer selected.\n";
+                        continue;
+                    }
+                    
 
-                    boolean added = currentBranch.addLoadedMember(
+                    String added = currentBranch.addLoadedMember(
                         memberId,
                         name,
                         planName,
@@ -681,7 +609,8 @@ public class GymBranch {
                         savedVisits
                     );
 
-                    if (!added) {
+                    if (!added.isEmpty()) {
+                        loadErrors += added + "\n";
                         continue;
                     }
                 }
@@ -752,18 +681,23 @@ public class GymBranch {
         }
     }
 
+    public static String getLoadErrors() {
+        String errors = loadErrors;
+        loadErrors = "";
+        return errors;
+    }
 
 
     // Adds a member from file data into this branch.
-    public boolean addLoadedMember(int memberId, String name, String planName, double planPrice, int durationMonths, boolean hasTrainer, int trainerSessions,
+    public String addLoadedMember(int memberId, String name, String planName, double planPrice, int durationMonths, boolean hasTrainer, int trainerSessions,
                                boolean hasLocker, double savedSubtotal, double savedTax, double savedTotal, int savedVisits) {
 
         if (isFull()) {
-            return false;
+            return "Error: " + memberId + " failed to add. Branch is full.";
         }
 
         if (isDuplicateMemberId(memberId)) {
-            return false;
+            return "Error: " + memberId + " failed to add. Member ID already exists.";
         }
 
         Member member = new Member(
@@ -782,9 +716,8 @@ public class GymBranch {
         members[memberCount] = member;
         memberCount++;
 
-        addCounters(member);
 
-        return true;
+        return "";
     }
 
 
