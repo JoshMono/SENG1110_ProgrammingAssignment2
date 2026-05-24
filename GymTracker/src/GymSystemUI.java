@@ -1,27 +1,51 @@
+/*
+ * Author: Joshua Monaghan
+ * Student ID: c3580928
+ * Course: SENG1110
+ * Assessment: Assessment 2
+ * Description: 
+ * Console-based gym membership management system
+ * that allows users to manage branches, register
+ * members, record visits, modify registrations,
+ * compare plans, simulate promotions, and save/load
+ * branch data from files.
+ * Date Created: 18/05/2026
+ * Last Modified: 24/05/2026
+ */
+
+
+// Handles all user input/output, menus, branch selection, and overall program state.
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Scanner;
 
 public class GymSystemUI {
+
+    // Scanner used for all keyboard input.
     private Scanner scanner;
+
+    // Stores up to three gym branches and tracks the active branch.
     private GymBranch[] branches;
     private int branchCount;
     private int activeBranchIndex;
 
-    
+    // Membership plan data loaded from plans.txt or defaults.
     private String[] planNames;
     private double[] planPrices;
     private String[] planFeatures;
     private int planCount;
 
+    // Program entry point.
     public static void main(String[] args) throws Exception {
         GymSystemUI ui = new GymSystemUI();
         ui.run();
     }
 
+    // Creates the UI object and prepares branch storage.
     public GymSystemUI() {
         scanner = new Scanner(System.in);
 
+        // Assignment allows a maximum of three branches.
         branches = new GymBranch[3];
 
         branchCount = 0;
@@ -29,6 +53,7 @@ public class GymSystemUI {
         
     }
     
+    // Starts the program, loads plans, creates a default branch, and runs the main menu loop.
     private void run() {
         scanner = new Scanner(System.in);
 
@@ -59,6 +84,7 @@ public class GymSystemUI {
         System.out.println("Goodbye.");
     }
 
+    // Displays the main menu and the currently active branch.
     private void displayMainMenu() {
         System.out.println("========================================");
         System.out.println("        GYM MEMBERSHIP SYSTEM");
@@ -163,14 +189,11 @@ public class GymSystemUI {
     }
 
 
-
     //
     //
     // Branch UI
     //
     //
-
-
 
 
    // Displays the branch management menu and handles branch actions.
@@ -433,17 +456,11 @@ public class GymSystemUI {
     }
 
 
-
-
     //
     //
     // Member UI
     //
     //
-
-
-
-
 
 
     // Displays all loaded membership plans and their details.
@@ -495,7 +512,6 @@ public class GymSystemUI {
         // Pause before returning to the menu
         pause();
     }
-
 
 
     // Loads membership plans from the plans.txt configuration file.
@@ -705,6 +721,7 @@ public class GymSystemUI {
     }   
 
 
+    // Collects registration details from the user and adds a member to the active branch.
     private void registerNewMember() {
         clear();
 
@@ -718,9 +735,11 @@ public class GymSystemUI {
             return;
         }
 
+        // Get basic member details.
         int memberId = getIntInRange("Enter member ID: ", 1, 999999);
         String name = getNonEmptyString("Enter member name: ");
 
+        // Get and price the selected membership plan.
         String planName = getPlanType("Enter membership plan: ");
         
         double planPrice = 0;
@@ -733,6 +752,7 @@ public class GymSystemUI {
             }
         }
 
+        // Get membership duration and optional add-ons.
         int duration = getIntInRange("Enter duration in months: ", 1, 12);
 
         boolean hasTrainer = getYesNo("Add personal trainer sessions? (Y/N): ");
@@ -744,6 +764,7 @@ public class GymSystemUI {
 
         boolean hasLocker = getYesNo("Add locker rental? (Y/N): ");
 
+        // Register the member through the active branch.
         String result = activeBranch().registerMember(
             memberId,
             name,
@@ -1141,7 +1162,7 @@ public class GymSystemUI {
     }
 
 
-    // Saves all branch data to a text file.
+    // Saves the currently active branch data to a text file.
     private void saveBranchData() {
         clear();
 
@@ -1155,16 +1176,17 @@ public class GymSystemUI {
             return;
         }
 
+        // Fixed file name used for saving active branch data.
         String filename = "branchData.txt";
 
-        System.out.println(
-            GymBranch.saveAllBranches(filename, branches, branchCount)
-        );
-
+        // Ask the active branch to save its own data.
+        System.out.println(branches[activeBranchIndex].saveBranchData(filename));
+        
         pause();
     }
 
 
+    // Loads branch data from file and overwrites the current active branch.
     private void loadBranchData() {
         clear();
 
@@ -1172,29 +1194,47 @@ public class GymSystemUI {
         System.out.println("          LOAD BRANCH DATA");
         System.out.println("========================================");
 
+        // Fixed file name used for loading branch data.
         String filename = "branchData.txt";
 
-        int loadedCount = GymBranch.loadAllBranches(
+        // Load a branch object from file through the GymBranch class.
+        GymBranch loadedBranch = GymBranch.loadBranchData(
             filename,
-            branches,
             planNames,
             planPrices
         );
 
-        if (loadedCount == -1) {
+        if (loadedBranch == null) {
             System.out.println("Error: Could not load branch data.");
         }
         else {
-            branchCount = loadedCount;
+            int matchingIndex = -1;
 
-            if (branchCount > 0) {
-                activeBranchIndex = 0;
+            for (int i = 0; i < branchCount; i++) {
+                if (branches[i].getBranchId() == loadedBranch.getBranchId()) {
+                    matchingIndex = i;
+                }
+            }
+
+            if (matchingIndex != -1) {
+                branches[matchingIndex] = loadedBranch;
+                activeBranchIndex = matchingIndex;
+
+                System.out.println("Existing branch found. Branch data overwritten.");
             }
             else {
-                activeBranchIndex = -1;
-            }
+                if (branchCount >= branches.length) {
+                    System.out.println("Error: Cannot load branch. Maximum branches reached.");
+                    pause();
+                    return;
+                }
 
-            System.out.println("Branch data loaded successfully.");
+                branches[branchCount] = loadedBranch;
+                activeBranchIndex = branchCount;
+                branchCount++;
+
+                System.out.println("New branch loaded successfully.");
+            }
 
             String errors = GymBranch.getLoadErrors();
 
@@ -1226,15 +1266,7 @@ public class GymSystemUI {
     }
 
 
-
-
-
-
-
-
-
     
-
 
 
 //
@@ -1243,17 +1275,10 @@ public class GymSystemUI {
 //
 //
 
+// Formats currency values to two decimal places.
 private String formatCurrency(double value) {
     return String.format("%.2f", value);
 }
-
-
-
-
-
-
-
-
 
 
 //
@@ -1303,7 +1328,6 @@ private String formatCurrency(double value) {
     }
 
 
-
     // Safely gets an integer input from the user within a specified range.
     // Continues prompting the user until a valid number is entered.
     private int getIntInRange(String prompt, int min, int max) {
@@ -1346,7 +1370,7 @@ private String formatCurrency(double value) {
         }
     }
 
-
+    // Returns the correctly stored plan name if the entered text matches a valid plan.
     private String getValidatedPlanFromText(String input) {
         for (int i = 0; i < planCount; i++) {
             if (planNames[i].equalsIgnoreCase(input)) {
@@ -1356,7 +1380,6 @@ private String formatCurrency(double value) {
 
         return null;
     }
-
 
 
     // Safely gets a non-empty String input from the user.
@@ -1424,8 +1447,6 @@ private String formatCurrency(double value) {
             }
         }
     }
-
-
 
 
     // Pauses the program until the user presses Enter.

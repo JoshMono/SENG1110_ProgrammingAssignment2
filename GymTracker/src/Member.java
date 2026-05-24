@@ -1,33 +1,33 @@
+// Stores one gym member and calculates that member's membership costs.
 public class Member {
 
-
-
-
-
-    // TODO: Later check GymBranch and Member for any System.out or Scanner use.
-    // Only GymSystemUI should handle input and output.
-
+    // Fixed prices used when calculating membership costs.
     private static final double TRAINER_PRICE = 25.00;
     private static final double LOCKER_PRICE = 10.00;
     private static final double GST_RATE = 0.10;
 
+    // Basic member registration details.
     private int memberId;
     private String name;
     private String planName;
     private double planPrice;
     private int durationMonths;
 
+    // Optional add-on selections.
     private boolean hasTrainer;
     private int trainerSessions;
     private boolean hasLocker;
 
+    // Calculated membership costs.
     private double monthlyCost;
     private double subtotal;
     private double tax;
     private double totalCost;
 
+    // Number of visits recorded for this member.
     private int visitCount;
 
+    // Creates a member and immediately calculates their membership costs.
     public Member(int memberId, String name, String planName, double planPrice,
                   int durationMonths, boolean hasTrainer, int trainerSessions,
                   boolean hasLocker) {
@@ -153,6 +153,7 @@ public class Member {
     }
 
 
+    // Restores saved cost and visit values when a member is loaded from file.
     public void loadSavedData(double subtotal, double tax, double totalCost, int visitCount) {
         this.subtotal = subtotal;
         this.tax = tax;
